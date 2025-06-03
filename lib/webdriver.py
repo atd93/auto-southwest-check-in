@@ -143,7 +143,7 @@ class WebDriver:
             # already has the correct driver
             driver_version = "keep"
 
-        driver = Driver(
+        self.driver = Driver(
             binary_location=browser_path,
             driver_version=driver_version,
             headed=IS_DOCKER,
@@ -152,6 +152,7 @@ class WebDriver:
             undetectable=True,
             incognito=True,
         )
+
         logger.debug("Using browser version: %s", driver.caps["browserVersion"])
 
         driver.add_cdp_listener("Network.requestWillBeSent", self._headers_listener)
@@ -262,8 +263,18 @@ class WebDriver:
         return LoginError(reason, self.login_status_code)
 
     def _get_needed_headers(self, request_headers: JSON) -> JSON:
-        # Return all headers Southwest's API sends — this includes cookies, authorization tokens, etc.
-        return request_headers
+        headers = dict(request_headers)
+    
+        try:
+            cookies = self.driver.get_cookies() if hasattr(self, "driver") else []
+            cookie_header = "; ".join([f"{c['name']}={c['value']}" for c in cookies])
+            if cookie_header:
+                headers["cookie"] = cookie_header
+        except Exception as e:
+            logger.debug("Error while extracting cookies: %s", e)
+    
+        return headers
+
 
 
     def _set_account_name(self, account_monitor: AccountMonitor, response: JSON) -> None:
