@@ -262,12 +262,9 @@ class WebDriver:
         return LoginError(reason, self.login_status_code)
 
     def _get_needed_headers(self, request_headers: JSON) -> JSON:
-        headers = {}
-        for header in request_headers:
-            if re.match(r"x-api-key|x-channel-id|user-agent|^[\w-]+?-\w$", header, re.IGNORECASE):
-                headers[header] = request_headers[header]
+        # Return all headers Southwest's API sends — this includes cookies, authorization tokens, etc.
+        return request_headers
 
-        return headers
 
     def _set_account_name(self, account_monitor: AccountMonitor, response: JSON) -> None:
         if account_monitor.first_name:
