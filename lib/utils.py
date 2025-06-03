@@ -60,9 +60,7 @@ def make_request(
 ) -> JSON:
     """
     Makes a request to the Southwest servers. For increased reliability, the request is performed
-    multiple times on failure. This request retrying is also necessary for check-ins, as check-in
-    requests are started five seconds ahead of the actual check-in time (in case the Southwest
-    server is not in sync with our NTP server or local computer).
+    multiple times on failure.
     """
     # Ensure the URL is not malformed
     site = site.replace("//", "/").lstrip("/")
@@ -72,43 +70,55 @@ def make_request(
     while attempts < max_attempts:
         attempts += 1
 
-        if method.upper() == "POST":
-            response = requests.post(url, headers=headers, json=info)
-        else:
-            response = requests.get(url, headers=headers, params=info)
-
-        if response.status_code == 200:
-            logger.debug("Successfully made request after %d attempts", attempts)
-            return response.json()
-
-        # Handle unsuccessful responses
-        response_body = response.content.decode()
-        error_msg = f"{response.reason} ({response.status_code})"
-        error = RequestError(error_msg, response_body)
-
         try:
-            _handle_southwest_error_code(error)
-        except (RequestError, AirportCheckInError) as err:
-            # Stop requesting after one attempt for special codes, as the requests won't succeed
-            error = err
-            break
+            if method.upper() == "POST":
+                response = requests.post(url, headers=headers, json=info)
+            else:
+                response = requests.get(url, headers=headers, params=info)
 
+            if response.status_code == 200:
+                logger.debug("Successfully made request after %d attempts", attempts)
+                return response.json()
+
+            # 🔍 Log on failure
+            print(f"🚫 Request failed (attempt {attempts})")
+            print("🔗 URL:", url)
+            print("📋 Headers:", headers)
+            print("📦 Payload:", info)
+            print(f"❌ Status: {response.status_code} - {response.reason}")
+            print("📝 Response text:", response.text[:500])  # limit output for readability
+
+            response_body = response.content.decode()
+            error_msg = f"{response.reason} ({response.status_code})"
+            error = RequestError(error_msg, response_body)
+
+            try:
+                _handle_southwest_error_code(error)
+            except (RequestError, AirportCheckInError) as err:
+                # Stop requesting after one attempt for special codes
+                error = err
+                break
+
+        except requests.RequestException as e:
+            print(f"⚠️ Request exception on attempt {attempts}: {e}")
+            error = RequestError(str(e))
+            response_body = ""
+
+        # Wait and retry
         if random_sleep:
             sleep_time = random_sleep_duration(1, 3)
         else:
             sleep_time = 0.5
 
         logger.debug(
-            "Request error on attempt %d: %s. Sleeping for %.2f seconds until next attempt",
-            attempts,
-            error_msg,
-            sleep_time,
+            "Retrying in %.2f seconds after error: %s", sleep_time, error
         )
         time.sleep(sleep_time)
 
-    logger.debug("Failed to make request after %d attempts: %s", attempts, error_msg)
-    logger.debug("Response body: %s", response_body)
+    logger.debug("Failed to make request after %d attempts: %s", attempts, error)
+    logger.debug("Final response body: %s", response_body)
     raise error
+
 
 
 def get_current_time() -> datetime:
