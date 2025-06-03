@@ -145,7 +145,7 @@ class WebDriver:
 
         self.driver = Driver(
             binary_location=browser_path,
-            driver_version=driver_version,
+            self.driver_version=self.driver_version,
             headed=IS_DOCKER,
             headless=not IS_DOCKER,
             uc_cdp_events=True,
@@ -153,14 +153,14 @@ class WebDriver:
             incognito=True,
         )
 
-        logger.debug("Using browser version: %s", driver.caps["browserVersion"])
+        logger.debug("Using browser version: %s", self.driver.caps["browserVersion"])
 
-        driver.add_cdp_listener("Network.requestWillBeSent", self._headers_listener)
+        self.driver.add_cdp_listener("Network.requestWillBeSent", self._headers_listener)
 
         logger.debug("Loading Southwest check-in page (this may take a moment)")
-        driver.open(CHECKIN_URL)
-        self._take_debug_screenshot(driver, "after_page_load.png")
-        return driver
+        self.driver.open(CHECKIN_URL)
+        self._take_debug_screenshot(self.driver, "after_page_load.png")
+        return self.driver
 
     def _headers_listener(self, data: JSON) -> None:
         """
