@@ -79,6 +79,9 @@ class FareChecker:
         fare_type = fare_type_bounds[bound]["fareProductDetails"]["fareProductId"]
 
         logger.debug("Retrieving matching flights")
+        print("⚠️ Fare check headers being sent:", self.headers)
+        print("🔗 URL:", site)
+        print("📦 Payload:", query)
         response = make_request("POST", site, self.headers, query, max_attempts=7)
         return response["changeShoppingPage"]["flights"][bound_page]["cards"], fare_type
 
