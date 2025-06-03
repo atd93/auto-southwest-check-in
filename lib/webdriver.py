@@ -155,7 +155,7 @@ class WebDriver:
 
         logger.debug("Using browser version: %s", self.driver.caps["browserVersion"])
 
-        self.driver.add_cdp_listener("Network.requestWillBeSent", self._headers_listener)
+        #self.driver.add_cdp_listener("Network.requestWillBeSent", self._headers_listener)
 
         logger.debug("Loading Southwest check-in page (this may take a moment)")
         self.driver.open(CHECKIN_URL)
