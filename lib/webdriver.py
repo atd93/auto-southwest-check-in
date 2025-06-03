@@ -162,16 +162,6 @@ class WebDriver:
         self._take_debug_screenshot(self.driver, "after_page_load.png")
         return self.driver
 
-    def _headers_listener(self, data: JSON) -> None:
-        """
-        Wait for the correct URL request has gone through. Once it has, set the headers
-        in the checkin_scheduler.
-        """
-        request = data["params"]["request"]
-        if request["url"] == HEADERS_URL:
-            self.checkin_scheduler.headers = self._get_needed_headers(request["headers"])
-            self.headers_set = True
-
     def _login_listener(self, data: JSON) -> None:
         """
         Wait for various responses that are needed once the account is logged in. The request IDs
