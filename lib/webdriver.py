@@ -210,6 +210,25 @@ class WebDriver:
         """
         self._click_login_button(driver)
         self._wait_for_attribute("login_request_id")
+        # Manually inject cookies into headers after login completes
+        request_headers = {
+            "x-api-key": "l7xx2c186c1297274b828b1872e22edfe67a",  # or pull dynamically
+            "x-channel-id": "MWEB",
+            "user-agent": self.driver.execute_script("return navigator.userAgent;"),
+            "accept": "application/json",
+            "referer": "https://mobile.southwest.com/air/check-in/",
+            "content-type": "application/json",
+        }
+
+        # Inject cookie header from current browser session
+        cookies = self.driver.get_cookies()
+        cookie_header = "; ".join([f"{c['name']}={c['value']}" for c in cookies])
+        request_headers["cookie"] = cookie_header
+        
+        # Save for checkin_scheduler
+        self.checkin_scheduler.headers = request_headers
+        self.headers_set = True
+
         login_response = self._get_response_body(driver, self.login_request_id)
 
         # Handle login errors
